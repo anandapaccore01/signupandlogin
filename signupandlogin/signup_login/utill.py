@@ -47,3 +47,19 @@ def  send_resetpasswordemail(users, token):
     email.send()
 
 
+def sendchangeemail(email,users):
+    to = email
+    name_f = users.first_name
+    name_l = users.last_name
+    name = name_f+" "+name_l  
+    subject='Account Email Change Request'
+    change_email='<p>Hello #NAME#,</p><p>We have email change for your account.</p><p>Your login credentials :</p><p>Your Previous Email: #EMAIL#</p><p>Please click the link to verify new your email.After Successful verification you can use your new email to login</p><p>Thank you,</p><p>Paccore Python Team</p>'
+    change_email = change_email.replace('#NAME#',name)
+    change_email = change_email.replace('#EMAIL#',users.email)
+    activation_link = f'http://127.0.0.1:8000/emailactivate?user_id={users.id}&confirmation_token={users.verify_string}'
+    
+    html_content = render_to_string("email_welcome.html", {'content':change_email, 'content1':activation_link}) 
+
+    email = EmailMultiAlternatives(subject, html_content, settings.EMAIL_HOST_USER, [to])
+    email.attach_alternative(html_content,'text/html')
+    email.send()

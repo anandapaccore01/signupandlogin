@@ -1,6 +1,7 @@
-from django.shortcuts import render,redirect,HttpResponse
-from django.contrib.auth import authenticate,login
+from django.shortcuts import render,redirect,HttpResponse,HttpResponseRedirect
+from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib import messages
 from django.db.models import Q
 from .models import *
 from .utill import *
@@ -9,9 +10,11 @@ import string
 
 
 # Create your views here.
+def homeview(request):
+    return render(request, 'base.html')
 
 def Registerview(request): 
-    if request.method == 'POST':
+    if request.method == 'POST':    
         user = CustomUsers.objects.create(
             first_name = request.POST.get('first_name'),
             last_name = request.POST.get('last_name'),
@@ -25,30 +28,35 @@ def Registerview(request):
         user.set_password(request.POST.get('password'))
         user.save()
         sendemail(user, request.POST.get('password'))
-        return HttpResponse('User is successfully register, A verification link is sent your email')
+        messages.success(request,'User is successfully register, A verification link is sent your email')
+        return redirect('Register')
     else:     
         return render(request,'registrations.html')
         
 def loginview(request):
     if request.method == 'POST':
-        username1=request.POST.get('username') 
+        username=request.POST.get('username')         
         password = request.POST.get('password')
-        my_user = CustomUsers.objects.filter(Q(username=username1) | Q(email=username1)).first()
+        try:
+            my_user = CustomUsers.objects.get(Q(username=username)|Q(email=username))
+        except CustomUsers.DoesNotExist:
+            my_user=None        
         if my_user is not None:
             username = my_user.username
             if my_user.status == 'Active':
                 user = authenticate(username=username, password=password)
-                if user is not None:
-                    login(request, user)
-                    return HttpResponse('u login successfully')
+                if user is not None:                    
+                    login(request, user)                    
+                    return HttpResponseRedirect('profile/%d'%user.id)
                 else:
-                    return HttpResponse('Invalid credentials')
+                    messages.error(request, 'Invalid credentials')
+                    return redirect('login')
             else:
-                return HttpResponse('Please verify your email before login')        
-            # if user is not None:
-                
+                messages.error(request, 'your email is not verified, Please check your register EMAIL ID.')
+                return redirect('login')       
         else:
-            return HttpResponse('Invalid credentials')
+           messages.error(request, 'Invalid credentials')
+           return redirect('login')
     else:
         return render(request, 'login.html')
 
@@ -66,29 +74,57 @@ def emailactivate(request, pk=None):
     user.is_active = True
     user.status = 'Active'
     user.save()
+    messages.success(request, 'Successfully, your EMAIL ID is verified. you can login now.')
     return redirect('login')
 
 def resetpasswordView(request):    
     if request.method == 'POST':
         email=request.POST.get('useremail')
         user=CustomUsers.objects.filter(email=email).first()
-        if user is not None:
-             
+        if user is not None:             
             request.session['token'] = PasswordResetTokenGenerator().make_token(user)
-            send_resetpasswordemail(user, request.session['token'])
-            
+            send_resetpasswordemail(user, request.session['token'])            
         else:
-            return HttpResponse('User is not found')
-         
+            messages.error(request, 'User is not found')
+            return redirect('resetpasswordview')         
     return render(request, 'reset_password.html')
 
-def resetpassword(request, pk=None):    
+def resetpassword(request, pk=None):
     user_id=request.GET.get('user_id','')
     user = CustomUsers.objects.get(pk=user_id)
     token = request.GET.get('token','')
     check = PasswordResetTokenGenerator().check_token(user,token=token)
-    return HttpResponse(check)
+    if check:
+       if request.method=='POST':
+            password=request.POST.get('password')
+            user.set_password(password)
+            user.save()
+            return redirect('login')
+       return render(request, 'change_password.html')
+    else:
+        return HttpResponse(" Invalid user or token")
+    
 
-def resetpasswordconfirm(request):
-    return (request, 'change_password.html')
+def Profileview(request,id):
+    user=CustomUsers.objects.get(id=id)
+    if request.method == 'POST':
+        email=request.POST.get('email')
+        return HttpResponse(email)
+    return render(request, 'profile.html',{'user':user})
 
+def logoutview(request):
+    logout(request)
+    messages.info(request,'u logout successfully')
+    return redirect('login')
+
+def changeemail(request):
+    if request.method == 'POST':
+        id=request.POST.get('user_id')
+        user=CustomUsers.objects.get(id=id)
+        email=request.POST.get('email')
+        sendchangeemail(email,user)
+        messages.success(request,'A verification link is sent your new email, please verify emailID')
+        user.email=email
+        user.save()
+        print(user.email)
+        return redirect('logout')
