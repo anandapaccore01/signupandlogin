@@ -18,10 +18,20 @@
                 <div class="col-12">
                     <div class="card-body p-4 p-md-5">
                         <h2  class="mb-4 pb-2 pb-md-0 mb-md-5" style="text-align: center ;">LOGIN</h2>
-                            {% for message in messages %}
-
-                            <div class=errMsg align="center">{{message}}</div>
-                            {% endfor %}
+                        {%if messages %}
+                        <ul class="messages"></ul>
+                        {% for message in messages %}
+                        {% if message.tags == 'success' %}
+                          <div class="alert alert-success">{{message}}</div>
+                          {% endif %}
+                          {% if message.tags == 'error' %}
+                          <div class="alert alert-danger">{{message}}</div>
+                          {% endif %}
+                          {% if message.tags == 'info' %}
+                          <div class="alert alert-success">{{message}}</div>
+                          {% endif %}
+                          {% endfor %}
+                          {% endif %}
 
                             <form method="POST">            
                                 {% csrf_token %}

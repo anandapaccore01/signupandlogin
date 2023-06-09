@@ -3,84 +3,91 @@
 
 
 {%block body%}
-<style>
-  .card{
-    width:1000px;
-  }
-    .errMsg{
-            color: red;
-            margin-bottom: 20px;
-        }
-</style>
-<section class="vh-100" style="background-color: #b833334d;">
+<<section class="vh-100" style="background-color: #baccf0;">
   <div class="container py-5 h-100">
     <div class="row d-flex justify-content-center align-items-center h-100">
-      <div class="row d-flex justify-content-center align-items-center h-100">
-        <div class="card" style="border-radius: 15px; background-color: #93e2bb;">
-          <div class="card-body p-4 text-black">
-            <div>
-              <h6 class="justify-content-center align-items-center">My Profile</h6>
-              <h6 class="mb-4">About</h6>
-              </div>
-    
-            <div class="mb-4">
-              <p class="fw-bold mb-0">
-                <label><strong>name:</strong></label>
-                {{ user.first_name }} {{ user.last_name }}
-              </p>
-            </div>
+      <div class="col-12 col-md-8 col-lg-6 col-xl-5">
+        
+        <div class="card shadow-2-strong" style="border-radius: 1rem;">
+          <div style="background-color: blue;">
+          <div class="card-body p-2 text-center">
+            {%if messages %}
+              <ul class="messages"></ul>
+              {% for message in messages %}
+              {% if message.tags == 'success' %}
+                <div class="alert alert-success">{{message}}</div>
+                {% endif %}
+                {% if message.tags == 'error' %}
+                <div class="alert alert-danger">{{message}}</div>
+                {% endif %}
+                {% if message.tags == 'info' %}
+                <div class="alert alert-success">{{message}}</div>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
             
-              <div class="col-lg-6">
-                <p>
-                <label><strong>Email:</strong></label>          
-                  {{ user.email }}
-                </p>
-              </div>
-              <div class="col-lg-6" style="text-align:right;"><a href="#" data-toggle="modal" data-target="#changeemail">Change Email</a> </div>
+            <h3 class="mb-5">MY Profile</h3>
+            </div>
+          </div>
+            <div class="form-outline mb-4">              
+              <label class="form-label" >username:</label>
+              {{ user.username }}
+            </div>
+
+            <div class="form-outline mb-4">              
+              <label class="form-label" >Email:</label>
+              {{ user.email }}
+              <a href="#" data-toggle="modal" data-target="#changeemail" >Change Email</a> 
+            </div>
+
+            <div class="form-outline mb-4">              
+              <label class="form-label" >Phone:</label>
+              {{ user.phone }}
+              
+              
+            </div>
+
+            
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal" tabindex="-1" id="changeemail">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">CHANGE EMAIL</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+            
+        <form id="changeemail" action="{%url 'changeemail'%}" method="POST">
+            {% csrf_token %}
+            <div class="form-group row">
+                <label class="col-lg-12 col-form-label form-control-label"> Enter New Email </label>                    
             </div>
             <div class="col-lg-12">
-            <label>Phone:</label>
-            
-               {{ user.phone }}
-            
-          </div>
-        </div>
+                <input type="text" name="email" placeholder="Enter Email" size="50%" />
+                
+                
+            </div>
+            <input type="hidden" value="{{user.id}}" name="user_id">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" class="btn btn-primary">Change Email</button>
+              </div>
 
+        </form>
+        </div>
+        
+      </div>
     </div>
-
-    <div class="modal" tabindex="-1" id="changeemail">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">CHANGE EMAIL</h5>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-                <script src="{%static 'register.js'%}"></script>
-            <form id="changeemailform"  name="changeemailform"  onsubmit="return changeemailvalidate()" action="{%url 'changeemail' %}" method="POST">
-                {% csrf_token %}
-                <div class="form-group row">
-                    <label class="col-lg-12 col-form-label form-control-label"> Enter New Email </label>                    
-                </div>
-                <div class="col-lg-12">
-                    <input type="text" name="email" placeholder="Enter Email" size="50%" />
-                    <div id="enote" class="errMsg"></div>
-                </div>
-                <input type="hidden" value="{{user.id}}" name="user_id">
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="submit" class="btn btn-primary" onclick="changeemailvalidate()">Change Email</button>
-                  </div>
-
-            </form>
-            </div>
-            
-          </div>
-        </div>
-      </div>
-      </div>
-      </div>
+  </div>
+  </div>
+  </div>
     </section>
 {% endblock %}

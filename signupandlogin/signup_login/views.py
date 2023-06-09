@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate,login,logout
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.contrib import messages
 from django.db.models import Q
+from .forms import Myform
 from .models import *
 from .utill import *
 import random
@@ -14,24 +15,29 @@ def homeview(request):
     return render(request, 'base.html')
 
 def Registerview(request): 
-    if request.method == 'POST':    
-        user = CustomUsers.objects.create(
-            first_name = request.POST.get('first_name'),
-            last_name = request.POST.get('last_name'),
-            username = request.POST.get('username'),
-            date_of_birth = request.POST.get('date_of_birth'),
-            gender = request.POST.get('gender'),
-            email = request.POST.get('email'),   
-            phone = request.POST.get('phone'),
-            verify_string="".join(random.choices(string.ascii_letters+string.digits,k=20)),
-            )
-        user.set_password(request.POST.get('password'))
-        user.save()
-        sendemail(user, request.POST.get('password'))
-        messages.success(request,'User is successfully register, A verification link is sent your email')
-        return redirect('Register')
-    else:     
-        return render(request,'registrations.html')
+    if request.method == 'POST':
+        form=Myform(request.POST)
+        if form.is_valid():    
+            user = CustomUsers.objects.create(
+                first_name = request.POST.get('first_name'),
+                last_name = request.POST.get('last_name'),
+                username = request.POST.get('username'),
+                date_of_birth = request.POST.get('date_of_birth'),
+                gender = request.POST.get('gender'),
+                email = request.POST.get('email'),   
+                phone = request.POST.get('phone'),
+                verify_string="".join(random.choices(string.ascii_letters+string.digits,k=20)),
+                )
+            user.set_password(request.POST.get('password'))
+            user.save()
+            sendemail(user, request.POST.get('password'))
+            messages.success(request,'User is successfully register, A verification link is sent your email')
+            return redirect('Register')
+        else:
+            return render(request,'registrations.html',{'form':form}) 
+    else:
+        form = Myform()    
+        return render(request,'registrations.html',{'form':form})
         
 def loginview(request):
     if request.method == 'POST':
@@ -107,9 +113,7 @@ def resetpassword(request, pk=None):
 
 def Profileview(request,id):
     user=CustomUsers.objects.get(id=id)
-    if request.method == 'POST':
-        email=request.POST.get('email')
-        return HttpResponse(email)
+    
     return render(request, 'profile.html',{'user':user})
 
 def logoutview(request):
@@ -121,8 +125,19 @@ def changeemail(request):
     if request.method == 'POST':
         id=request.POST.get('user_id')
         user=CustomUsers.objects.get(id=id)
+
         email=request.POST.get('email')
-        sendchangeemail(email,user)
+        try:
+            email1=CustomUsers.objects.get(email=email)
+        except(TypeError, ValueError, OverflowError, user.DoesNotExist):
+            email1=None
+        
+        if email1 is None:
+            sendchangeemail(email,user)
+        else:
+            print(type(id)) 
+            messages.error(request, 'This email is already exists, Please give another email')
+            return HttpResponseRedirect('profile/%d'%int(id))            
         messages.success(request,'A verification link is sent your new email, please verify emailID')
         user.email=email
         user.save()
